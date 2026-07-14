@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Portal 3 — Fan Edition</title>
+    <style>
+        /* ===== ОБЩИЕ СТИЛИ ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; background: #0b0e14; font-family: 'Segoe UI', Arial, sans-serif; touch-action: none; }
+        canvas { display: block; }
+
+        /* ===== ГЛАВНЫЙ ЭКРАН (Portal 2 стиль) ===== */
+        #mainMenu {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(ellipse at center, #0a0e1a 0%, #030507 100%);
+            z-index: 100;
+            transition: opacity 0.8s ease;
+            user-select: none;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        #mainMenu.hidden { opacity: 0; pointer-events: none; }
+
+        .bg-lines {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.15;
+            background:
+                repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(245,166,35,0.05) 40px, rgba(245,166,35,0.05) 41px),
+                repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(245,166,35,0.05) 40px, rgba(245,166,35,0.05) 41px);
+        }
+        .aperture-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid rgba(245,166,35,0.04);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .aperture-ring:nth-child(2) { top: -80px; right: -80px; width: 400px; height: 400px; }
+        .aperture-ring:nth-child(3) { bottom: -100px; left: -100px; width: 500px; height: 500px; border-color: rgba(138,240,255,0.03); }
+
+        #mainMenu .content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            pointer-events: auto;
+            animation: fadeInUp 1s ease;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #mainMenu .logo {
+            font-size: 6rem;
+            font-weight: 900;
+            color: #f5a623;
+            text-shadow: 0 0 60px #f5a62388, 0 0 120px #f5a62344, 0 0 200px #f5a62322;
+            letter-spacing: 12px;
+            margin-bottom: 5px;
+            animation: portalGlow 3s infinite alternate;
+        }
+        @keyframes portalGlow {
+            0% { text-shadow: 0 0 40px #f5a62366, 0 0 80px #f5a62333, 0 0 120px #f5a62322; }
+            100% { text-shadow: 0 0 80px #f5a623aa, 0 0 160px #f5a62355, 0 0 240px #f5a62333; }
+        }
+        #mainMenu .logo .sub {
+            font-size: 1.8rem;
+            color: #8af0ff;
+            letter-spacing: 6px;
+            font-weight: 300;
+            opacity: 0.8;
+            display: block;
+            margin-top: -10px;
+            text-shadow: 0 0 20px #8af0ff33;
+        }
+        #mainMenu .version {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 40px;
+            letter-spacing: 4px;
+            font-weight: 300;
+        }
+        #mainMenu .version span { color: #f5a623; }
+
+        #mainMenu .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            width: 300px;
+            margin: 0 auto;
+        }
+        #mainMenu .menu-buttons button {
+            background: rgba(255,255,255,0.03);
+            border: 2px solid rgba(245,166,35,0.2);
+            color: #c0c0c0;
+            padding: 16px 0;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.3s ease;
+            width: 100%;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            pointer-events: auto;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(4px);
+        }
+        #mainMenu .menu-buttons button::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(245,166,35,0.08), transparent);
+            transition: 0.6s;
+        }
+        #mainMenu .menu-buttons button:hover::before { left: 100%; }
+        #mainMenu .menu-buttons button:hover {
+            background: rgba(245,166,35,0.08);
+            border-color: #f5a623;
+            color: #fff;
+            box-shadow: 0 0 30px rgba(245,166,35,0.05);
+        }
+        #mainMenu .menu-buttons button.primary {
+            background: rgba(245,166,35,0.12);
+            border-color: #f5a623;
+            color: #f5a623;
+            box-shadow: 0 0 40px rgba(245,166,35,0.05);
+        }
+        #mainMenu .menu-buttons button.primary:hover {
+            background: #f5a623;
+            color: #0b0e14;
+            box-shadow: 0 0 60px rgba(245,166,35,0.2);
+        }
+        #mainMenu .menu-buttons button.danger {
+            color: #884444;
+            border-color: rgba(255,68,68,0.15);
+        }
+        #mainMenu .menu-buttons button.danger:hover {
+            background: rgba(255,68,68,0.08);
+            border-color: #ff4444;
+            color: #ff8888;
+        }
+        #mainMenu .menu-buttons button.vr-btn {
+            border-color: rgba(136,136,255,0.15);
+            color: #6666aa;
+        }
+        #mainMenu .menu-buttons button.vr-btn:hover {
+            background: rgba(136,136,255,0.08);
+            border-color: #8888ff;
+            color: #aaaaff;
+        }
+
+        /* Индикатор сохранения */
+        #saveIndicator {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: #444;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0.6;
+        }
+
+        #mainMenu .footer-text {
+            margin-top: 50px;
+            font-size: 0.7rem;
+            color: #333;
+            letter-spacing: 3px;
+            pointer-events: none;
+            font-weight: 300;
+        }
+        #mainMenu .footer-text span { color: #f5a62333; }
+
+        /* ===== ОКНО НАСТРОЕК ===== */
+        #settingsOverlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            backdrop-filter: blur(8px);
+        }
+        #settingsOverlay.show { display: flex; }
+        #settingsOverlay .settings-panel {
+            background: rgba(10,14,26,0.95);
+            border: 1px solid rgba(245,166,35,0.15);
+            border-radius: 8px;
+            padding: 40px;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 0 80px rgba(0,0,0,0.6);
+        }
+        #settingsOverlay .settings-panel h2 {
+            color: #f5a623;
+            font-size: 1.8rem;
+            letter-spacing: 4px;
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: 300;
+        }
+        #settingsOverlay .settings-panel label {
+            display: block;
+            color: #aaa;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-weight: 300;
+        }
+        #settingsOverlay .settings-panel input[type="range"] {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            height: 4px;
+            border-radius: 2px;
+            appearance: none;
+            outline: none;
+        }
+        #settingsOverlay .settings-panel input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #f5a623;
+            cursor: pointer;
+            border: none;
+        }
+        #settingsOverlay .settings-panel .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 5px;
+        }
+        #settingsOverlay .settings-panel .setting-row span {
+            color: #666;
+            font-size: 0.8rem;
+        }
+        #settingsOverlay .settings-panel .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        #settingsOverlay .settings-panel .checkbox-row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #f5a623;
+            cursor: pointer;
+        }
+        #settingsOverlay .settings-panel .checkbox-row label {
+            margin: 0;
+            cursor: pointer;
+            color: #aaa;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+        #settingsOverlay .settings-panel .btn-close {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(245,166,35,0.15);
+            color: #c0c0c0;
+            padding: 12px 0;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.3s ease;
+            width: 100%;
+            margin-top: 25px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-weight: 300;
+        }
+        #settingsOverlay .settings-panel .btn-close:hover {
+            background: rgba(245,166,35,0.08);
+            border-color: #f5a623;
+            color: #fff;
+        }
+
+        /* ===== ИГРОВОЙ ИНТЕРФЕЙС ===== */
+        #ui {
+            position: absolute;
+            top: 20px; left: 20px;
+            color: #fff;
+            background: rgba(0,0,0,0.6);
+            padding: 10px 20px;
+            border-radius: 4px;
+            border-left: 4px solid #f5a623;
+            pointer-events: none;
+            z-index: 10;
+            font-size: 1.1rem;
+            display: none;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+        #message {
+            position: absolute;
+            bottom: 100px;
+            left: 0; width: 100%;
+            text-align: center;
+            color: #fff;
+            font-size: 1.4rem;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            pointer-events: none;
+            z-index: 10;
+            display: none;
+        }
+        #crosshair {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255,255,255,0.15);
+            font-size: 2.5rem;
+            pointer-events: none;
+            z-index: 10;
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+            display: none;
+            font-weight: 100;
+        }
+
+        #fullscreenBtn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #aaa;
+            font-size: 1.2rem;
+            padding: 8px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            z-index: 10;
+            display: none;
+            transition: 0.3s;
+            letter-spacing: 1px;
+            font-weight: 300;
+        }
+        #fullscreenBtn:hover {
+            background: rgba(245,166,35,0.15);
+            border-color: #f5a623;
+            color: #fff;
+        }
+
+        .level-complete {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 20;
+            backdrop-filter: blur(6px);
+        }
+        .level-complete.show { display: flex; }
+        .level-complete h2 { font-size: 3rem; color: #f5a623; text-shadow: 0 0 40px #f5a62388; margin-bottom: 10px; }
+        .level-complete p { font-size: 1.2rem; color: #fff; margin-bottom: 25px; }
+        .level-complete button {
+            background: #f5a623; color: #0b0e14; border: none;
+            padding: 14px 50px; border-radius: 4px; font-size: 1.4rem; font-weight: 700;
+            cursor: pointer; transition: 0.3s; box-shadow: 0 0 30px #f5a62366;
+            letter-spacing: 2px;
+        }
+        .level-complete button:hover { transform: scale(1.05); background: #ffc107; }
+        #controls-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 0; width: 100%;
+            text-align: center;
+            color: #444;
+            font-size: 0.7rem;
+            pointer-events: none;
+            z-index: 10;
+            display: none;
+            letter-spacing: 2px;
+            font-weight: 300;
+        }
+
+        .portal-buttons {
+            position: absolute;
+            bottom: 100px;
+            right: 20px;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .portal-buttons button {
+            pointer-events: auto;
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.15);
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            transition: 0.3s;
+            text-shadow: 0 0 10px #000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            background: rgba(20,30,40,0.5);
+            backdrop-filter: blur(4px);
+        }
+        .portal-buttons button.blue { border-color: #0066ff88; color: #88ccff; }
+        .portal-buttons button.orange { border-color: #ff660088; color: #ffaa44; }
+        .portal-buttons button.purple { border-color: #aa44ff88; color: #cc88ff; }
+        .portal-buttons button.active { box-shadow: 0 0 30px #fff; transform: scale(1.1); border-color: #fff; }
+
+        #pauseBtn {
+            position: absolute;
+            top: 20px;
+            right: 80px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #aaa;
+            font-size: 1.2rem;
+            padding: 8px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            z-index: 10;
+            display: none;
+            transition: 0.3s;
+        }
+        #pauseBtn:hover {
+            background: rgba(245,166,35,0.15);
+            border-color: #f5a623;
+            color: #fff;
+        }
+
+        #pauseMenu {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 50;
+            backdrop-filter: blur(8px);
+        }
+        #pauseMenu.show { display: flex; }
+        #pauseMenu .pause-content {
+            text-align: center;
+            padding: 40px;
+            border-radius: 4px;
+            background: rgba(10,14,26,0.8);
+            border: 1px solid rgba(245,166,35,0.1);
+            box-shadow: 0 0 80px rgba(0,0,0,0.5);
+            max-width: 400px;
+            width: 90%;
+        }
+        #pauseMenu .pause-logo { font-size: 3rem; color: #f5a623; text-shadow: 0 0 40px #f5a62388; margin-bottom: 5px; font-weight: 900; letter-spacing: 4px; }
+        #pauseMenu .pause-title { font-size: 1.8rem; color: #fff; margin-bottom: 5px; font-weight: 300; letter-spacing: 6px; }
+        #pauseMenu .pause-level { font-size: 1rem; color: #8af0ff; margin-bottom: 25px; opacity: 0.7; letter-spacing: 2px; }
+        #pauseMenu .pause-level span { color: #f5a623; font-weight: bold; }
+        #pauseMenu .pause-buttons { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        #pauseMenu .pause-buttons button {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(245,166,35,0.15); color: #c0c0c0;
+            padding: 14px 0; border-radius: 4px; font-size: 1.1rem; font-weight: 500; cursor: pointer;
+            transition: 0.3s ease; width: 100%; letter-spacing: 3px; text-transform: uppercase;
+        }
+        #pauseMenu .pause-buttons button:hover {
+            background: rgba(245,166,35,0.08); border-color: #f5a623; color: #fff;
+        }
+        #pauseMenu .pause-buttons button.primary {
+            background: rgba(245,166,35,0.12); border-color: #f5a623; color: #f5a623;
+        }
+        #pauseMenu .pause-buttons button.primary:hover {
+            background: #f5a623; color: #0b0e14;
+        }
+        #pauseMenu .pause-buttons button.danger {
+            color: #884444; border-color: rgba(255,68,68,0.15);
+        }
+        #pauseMenu .pause-buttons button.danger:hover {
+            background: rgba(255,68,68,0.08); border-color: #ff4444; color: #ff8888;
+        }
+        #pauseMenu .pause-footer { margin-top: 25px; font-size: 0.7rem; color: #444; letter-spacing: 2px; }
+
+        .touch-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            pointer-events: none;
+            z-index: 15;
+            display: none;
+        }
+        .touch-controls.active { display: block; }
+        .touch-joystick {
+            position: absolute;
+            left: 30px;
+            bottom: 30px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.08);
+            pointer-events: auto;
+            touch-action: none;
+        }
+        .touch-joystick .knob {
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        .touch-buttons {
+            position: absolute;
+            right: 20px;
+            bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            pointer-events: none;
+        }
+        .touch-buttons button {
+            pointer-events: auto;
+            width: 70px; height: 70px;
+            border-radius: 50%;
+            border: 1px solid rgba(245,166,35,0.2);
+            background: rgba(20,30,40,0.5);
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: bold;
+            touch-action: none;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .touch-buttons .action-btn { border-color: rgba(255,102,0,0.3); color: #ff8844; }
+        .touch-buttons .reset-btn { width: 50px; height: 50px; font-size: 1.2rem; border-color: rgba(255,68,68,0.2); color: #ff6666; }
+        .touch-look {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 50%;
+            height: 100%;
+            pointer-events: auto;
+            touch-action: none;
+            z-index: 5;
+            background: transparent;
+        }
+        @media (pointer: coarse) {
+            .touch-controls.active { display: block; }
+            #controls-hint { display: none; }
+            #pauseBtn { display: block; }
+        }
+        #gyroIndicator {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            color: #8af0ff44;
+            font-size: 0.7rem;
+            background: rgba(0,0,0,0.3);
+            padding: 4px 12px;
+            border-radius: 4px;
+            border: 1px solid rgba(138,240,255,0.08);
+            display: none;
+            z-index: 10;
+            pointer-events: none;
+            letter-spacing: 1px;
+        }
+        @media (max-width: 600px) {
+            #mainMenu .logo { font-size: 3.5rem; }
+            #mainMenu .logo .sub { font-size: 1.2rem; }
+            #mainMenu .menu-buttons { width: 250px; }
+            #mainMenu .menu-buttons button { font-size: 0.9rem; padding: 14px 0; }
+            .portal-buttons button { width: 50px; height: 50px; font-size: 1rem; }
+            #ui { font-size: 0.9rem; padding: 6px 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== ГЛАВНЫЙ ЭКРАН ===== -->
+    <div id="mainMenu">
+        <div class="bg-lines"></div>
+        <div class="aperture-ring"></div>
+        <div class="aperture-ring"></div>
+        <div class="content">
+            <div class="logo">
+                PORTAL 3
+                <span class="sub">⚡ Fan Edition</span>
+            </div>
+            <div class="version">v<span>1.0</span> Ultimate</div>
+            <div class="menu-buttons">
+                <button class="primary" id="btnNewGame">▶ Новая игра</button>
+                <button id="btnContinue">⏩ Продолжить</button>
+                <button id="btnSettings">⚙ Настройки</button>
+                <button class="vr-btn" id="btnVR">🥽 VR</button>
+                <button class="danger" id="btnExit">✕ Выход</button>
+            </div>
+            <div class="footer-text">© 2026 — <span>SWILL</span> · Aperture Science</div>
+        </div>
+        <div id="saveIndicator">💾 Автосохранение</div>
+    </div>
+
+    <!-- ===== ОКНО НАСТРОЕК ===== -->
+    <div id="settingsOverlay">
+        <div class="settings-panel">
+            <h2>⚙ Настройки</h2>
+            <label>Громкость</label>
+            <input type="range" id="volumeSlider" min="0" max="100" value="70">
+            <div class="setting-row">
+                <span>Тихо</span>
+                <span id="volumeValue">70%</span>
+                <span>Громко</span>
+            </div>
+
+            <label>Чувствительность мыши</label>
+            <input type="range" id="sensitivitySlider" min="1" max="10" value="5">
+            <div class="setting-row">
+                <span>Медленно</span>
+                <span id="sensitivityValue">5</span>
+                <span>Быстро</span>
+            </div>
+
+            <div class="checkbox-row">
+                <input type="checkbox" id="shadowsCheckbox" checked>
+                <label for="shadowsCheckbox">Тени (вкл/выкл)</label>
+            </div>
+            <div class="checkbox-row">
+                <input type="checkbox" id="fpsCheckbox">
+                <label for="fpsCheckbox">Показывать FPS</label>
+            </div>
+
+            <button class="btn-close" id="settingsClose">Закрыть</button>
+        </div>
+    </div>
+
+    <!-- ===== ИГРОВОЙ ИНТЕРФЕЙС ===== -->
+    <div id="ui">🎯 Кубов: <span id="counter">0</span>/<span id="total">0</span> &nbsp;| Уровень <span id="levelNum">1</span></div>
+    <div id="message"></div>
+    <div id="crosshair">+</div>
+    <div id="gyroIndicator">🔄 Гироскоп</div>
+    <div id="controls-hint">WASD — движение, мышь — взгляд, 1-2-3 — порталы, Пробел — прыжок, E — взять/бросить куб, R — перезапуск</div>
+
+    <button id="fullscreenBtn">⛶ Полный экран</button>
+
+    <div class="portal-buttons" id="portalButtons">
+        <button class="blue" id="portalBlueBtn">🔵</button>
+        <button class="orange" id="portalOrangeBtn">🟠</button>
+        <button class="purple" id="portalPurpleBtn">🟣</button>
+    </div>
+
+    <button id="pauseBtn">⏸</button>
+
+    <div id="pauseMenu">
+        <div class="pause-content">
+            <div class="pause-logo">⏸</div>
+            <div class="pause-title">ПАУЗА</div>
+            <div class="pause-level">Уровень <span id="pauseLevel">1</span></div>
+            <div class="pause-buttons">
+                <button class="primary" id="pauseResume">▶ Продолжить</button>
+                <button id="pauseRestart">🔄 Перезапустить</button>
+                <button id="pauseSettings">⚙ Настройки</button>
+                <button class="danger" id="pauseExit">✕ Выйти</button>
+            </div>
+            <div class="pause-footer">ESC / Start на геймпаде</div>
+        </div>
+    </div>
+
+    <div class="level-complete" id="levelComplete">
+        <h2 id="completeTitle">🎉 Уровень пройден!</h2>
+        <p id="completeMsg">Отлично!</p>
+        <button id="nextLevelBtn">➡️ Далее</button>
+    </div>
+
+    <div class="touch-controls" id="touchControls">
+        <div class="touch-joystick" id="joystick">
+            <div class="knob" id="joystickKnob"></div>
+        </div>
+        <div class="touch-look" id="touchLook"></div>
+        <div class="touch-buttons">
+            <button class="action-btn" id="touchAction">E</button>
+            <button id="touchJump">⬆</button>
+            <button class="reset-btn" id="touchReset">↺</button>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // ============================================================
+        //  СОХРАНЕНИЕ И ЗАГРУЗКА
+        // ============================================================
+        const SAVE_KEY = 'portal3_save';
+
+        function saveGame(levelIndex, playerPos, playerVel) {
+            try {
+                const data = {
+                    level: levelIndex,
+                    player: {
+                        x: playerPos.x,
+                        y: playerPos.y,
+                        z: playerPos.z,
+                        vx: playerVel.x,
+                        vy: playerVel.y,
+                        vz: playerVel.z
+                    },
+                    timestamp: Date.now()
+                };
+                localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+                document.getElementById('saveIndicator').style.opacity = '1';
+                setTimeout(() => {
+                    document.getElementById('saveIndicator').style.opacity = '0.6';
+                }, 500);
+            } catch (e) {
+                console.warn('Не удалось сохранить прогресс:', e);
+            }
+        }
+
+        function loadGame() {
+            try {
+                const raw = localStorage.getItem(SAVE_KEY);
+                if (!raw) return null;
+                const data = JSON.parse(raw);
+                return data;
+            } catch (e) {
+                console.warn('Не удалось загрузить сохранение:', e);
+                return null;
+            }
+        }
+
+        function hasSave() {
+            return localStorage.getItem(SAVE_KEY) !== null;
+        }
+
+        // ============================================================
+        //  НАСТРОЙКИ
+        // ============================================================
+        const settingsOverlay = document.getElementById('settingsOverlay');
+        const settingsClose = document.getElementById('settingsClose');
+        const btnSettings = document.getElementById('btnSettings');
+        const pauseSettings = document.getElementById('pauseSettings');
+
+        const volumeSlider = document.getElementById('volumeSlider');
+        const sensitivitySlider = document.getElementById('sensitivitySlider');
+        const shadowsCheckbox = document.getElementById('shadowsCheckbox');
+        const fpsCheckbox = document.getElementById('fpsCheckbox');
+        const volumeValue = document.getElementById('volumeValue');
+        const sensitivityValue = document.getElementById('sensitivityValue');
+
+        // Загрузка настроек
+        function loadSettings() {
+            try {
+                const settings = JSON.parse(localStorage.getItem('portal3_settings'));
+                if (settings) {
+                    volumeSlider.value = settings.volume || 70;
+                    sensitivitySlider.value = settings.sensitivity || 5;
+                    shadowsCheckbox.checked = settings.shadows !== false;
+                    fpsCheckbox.checked = settings.fps || false;
+                    updateSettingsDisplay();
+                }
+            } catch (e) {}
+        }
+
+        function saveSettings() {
+            const settings = {
+                volume: parseInt(volumeSlider.value),
+                sensitivity: parseInt(sensitivitySlider.value),
+                shadows: shadowsCheckbox.checked,
+                fps: fpsCheckbox.checked
+            };
+            localStorage.setItem('portal3_settings', JSON.stringify(settings));
+            updateSettingsDisplay();
+            applySettings();
+        }
+
+        function updateSettingsDisplay() {
+            volumeValue.textContent = volumeSlider.value + '%';
+            sensitivityValue.textContent = sensitivitySlider.value;
+        }
+
+        function applySettings() {
+            // Применяем настройки к игре (будет реализовано в основной логике)
+            const sens = parseInt(sensitivitySlider.value);
+            // Устанавливаем чувствительность мыши (используется в mousemove)
+            window._mouseSensitivity = sens / 5;
+            // Тени
+            if (renderer) {
+                renderer.shadowMap.enabled = shadowsCheckbox.checked;
+            }
+            // FPS счётчик
+            if (fpsCheckbox.checked) {
+                // будет показываться в цикле
+            }
+        }
+
+        volumeSlider.addEventListener('input', () => { updateSettingsDisplay(); saveSettings
