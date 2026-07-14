@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Portal 3 — Fan Edition</title>
+    <style>
+        /* ===== ОБЩИЕ СТИЛИ ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; background: #0b0e14; font-family: 'Segoe UI', Arial, sans-serif; touch-action: none; }
+        canvas { display: block; }
+
+        /* ===== ГЛАВНЫЙ ЭКРАН ===== */
+        #mainMenu {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(ellipse at center, #0f1a2a 0%, #06080d 100%);
+            z-index: 100;
+            transition: opacity 0.8s ease;
+            user-select: none;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        #mainMenu.hidden { opacity: 0; pointer-events: none; }
+        #mainMenu .bg-particles {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.4;
+        }
+        #mainMenu .deco-line {
+            position: absolute;
+            background: rgba(245, 166, 35, 0.05);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        #mainMenu .deco-line:nth-child(2) {
+            width: 600px; height: 600px;
+            top: -150px; right: -200px;
+            border: 1px solid rgba(245, 166, 35, 0.05);
+        }
+        #mainMenu .deco-line:nth-child(3) {
+            width: 400px; height: 400px;
+            bottom: -100px; left: -100px;
+            border: 1px solid rgba(138, 240, 255, 0.05);
+        }
+        #mainMenu .content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            pointer-events: auto;
+            animation: fadeInUp 1s ease;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        #mainMenu .logo {
+            font-size: 5.5rem;
+            font-weight: 900;
+            color: #f5a623;
+            text-shadow: 0 0 40px #f5a62388, 0 0 80px #f5a62344, 0 0 120px #f5a62322;
+            letter-spacing: 8px;
+            margin-bottom: 5px;
+            animation: glowPulse 2.5s infinite alternate;
+        }
+        @keyframes glowPulse {
+            0% { text-shadow: 0 0 30px #f5a62366, 0 0 60px #f5a62333, 0 0 100px #f5a62322; }
+            100% { text-shadow: 0 0 60px #f5a623aa, 0 0 120px #f5a62355, 0 0 180px #f5a62333; }
+        }
+        #mainMenu .subtitle { font-size: 1.4rem; color: #8af0ff; letter-spacing: 4px; margin-bottom: 5px; font-weight: 300; opacity: 0.9; }
+        #mainMenu .version { font-size: 0.9rem; color: #888; margin-bottom: 35px; letter-spacing: 2px; font-weight: 300; }
+        #mainMenu .version span { color: #f5a623; }
+        #mainMenu .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 280px;
+            margin: 0 auto;
+        }
+        #mainMenu .menu-buttons button {
+            background: rgba(255,255,255,0.03);
+            border: 2px solid rgba(245,166,35,0.25);
+            color: #e0e0e0;
+            padding: 16px 0;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s ease;
+            width: 100%;
+            backdrop-filter: blur(4px);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            pointer-events: auto;
+            position: relative;
+            overflow: hidden;
+        }
+        #mainMenu .menu-buttons button::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(245,166,35,0.1), transparent);
+            transition: 0.5s;
+        }
+        #mainMenu .menu-buttons button:hover::after { left: 100%; }
+        #mainMenu .menu-buttons button:hover {
+            background: rgba(245,166,35,0.15);
+            border-color: #f5a623;
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(245,166,35,0.15);
+            color: #fff;
+        }
+        #mainMenu .menu-buttons button.primary {
+            background: #f5a623;
+            color: #0b0e14;
+            border-color: #f5a623;
+            box-shadow: 0 0 40px rgba(245,166,35,0.3);
+        }
+        #mainMenu .menu-buttons button.primary:hover {
+            background: #ffc107;
+            box-shadow: 0 0 60px rgba(245,166,35,0.5);
+            transform: scale(1.03);
+        }
+        #mainMenu .menu-buttons button.danger {
+            color: #ff6666;
+            border-color: rgba(255,68,68,0.3);
+        }
+        #mainMenu .menu-buttons button.danger:hover {
+            background: rgba(255,68,68,0.15);
+            border-color: #ff4444;
+            color: #ff8888;
+        }
+        #mainMenu .menu-buttons button.vr-btn {
+            border-color: rgba(136,136,255,0.3);
+            color: #aaaaff;
+        }
+        #mainMenu .menu-buttons button.vr-btn:hover {
+            background: rgba(136,136,255,0.15);
+            border-color: #8888ff;
+            color: #ccccff;
+        }
+        #mainMenu .footer-text {
+            margin-top: 40px;
+            font-size: 0.75rem;
+            color: #444;
+            letter-spacing: 2px;
+            pointer-events: none;
+            font-weight: 300;
+        }
+        #mainMenu .footer-text span { color: #f5a62355; }
+
+        /* ===== ИГРОВОЙ ИНТЕРФЕЙС ===== */
+        #ui {
+            position: absolute;
+            top: 20px; left: 20px;
+            color: #fff;
+            background: rgba(0,0,0,0.6);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border-left: 4px solid #f5a623;
+            pointer-events: none;
+            z-index: 10;
+            font-size: 1.1rem;
+            display: none;
+        }
+        #message {
+            position: absolute;
+            bottom: 100px;
+            left: 0; width: 100%;
+            text-align: center;
+            color: #fff;
+            font-size: 1.4rem;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            pointer-events: none;
+            z-index: 10;
+            display: none;
+        }
+        #crosshair {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255,255,255,0.2);
+            font-size: 2rem;
+            pointer-events: none;
+            z-index: 10;
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+            display: none;
+        }
+        .level-complete {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 20;
+            backdrop-filter: blur(6px);
+        }
+        .level-complete.show { display: flex; }
+        .level-complete h2 { font-size: 3rem; color: #f5a623; text-shadow: 0 0 40px #f5a62388; margin-bottom: 10px; }
+        .level-complete p { font-size: 1.2rem; color: #fff; margin-bottom: 25px; }
+        .level-complete button {
+            background: #f5a623; color: #0b0e14; border: none;
+            padding: 14px 50px; border-radius: 60px; font-size: 1.4rem; font-weight: 700;
+            cursor: pointer; transition: 0.3s; box-shadow: 0 0 30px #f5a62366;
+        }
+        .level-complete button:hover { transform: scale(1.05); background: #ffc107; }
+        #controls-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 0; width: 100%;
+            text-align: center;
+            color: #aaa;
+            font-size: 0.75rem;
+            pointer-events: none;
+            z-index: 10;
+            display: none;
+            letter-spacing: 1px;
+            opacity: 0.6;
+        }
+
+        /* ===== КНОПКИ ПОРТАЛОВ ===== */
+        .portal-buttons {
+            position: absolute;
+            bottom: 100px;
+            right: 20px;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .portal-buttons button {
+            pointer-events: auto;
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.3);
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            transition: 0.3s;
+            text-shadow: 0 0 10px #000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        .portal-buttons button.blue { background: #0066ff; border-color: #88ccff; }
+        .portal-buttons button.orange { background: #ff6600; border-color: #ffaa44; }
+        .portal-buttons button.purple { background: #aa44ff; border-color: #cc88ff; }
+        .portal-buttons button.active { box-shadow: 0 0 30px #fff; transform: scale(1.1); }
+
+        /* ===== КНОПКА ПАУЗЫ ===== */
+        #pauseBtn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.5);
+            border: 2px solid rgba(245,166,35,0.3);
+            color: #fff;
+            font-size: 1.5rem;
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            z-index: 10;
+            display: none;
+            transition: 0.3s;
+        }
+        #pauseBtn:hover {
+            background: rgba(245,166,35,0.2);
+            border-color: #f5a623;
+        }
+
+        /* ===== МЕНЮ ПАУЗЫ (НОРМАЛЬНОЕ) ===== */
+        #pauseMenu {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 50;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.3s ease;
+        }
+        #pauseMenu.show { display: flex; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        #pauseMenu .pause-content {
+            text-align: center;
+            padding: 40px;
+            border-radius: 30px;
+            background: rgba(20, 30, 40, 0.6);
+            border: 1px solid rgba(245, 166, 35, 0.15);
+            box-shadow: 0 0 80px rgba(0,0,0,0.5);
+            max-width: 400px;
+            width: 90%;
+        }
+        #pauseMenu .pause-logo {
+            font-size: 3rem;
+            color: #f5a623;
+            text-shadow: 0 0 40px #f5a62388;
+            margin-bottom: 5px;
+            font-weight: 900;
+            letter-spacing: 4px;
+        }
+        #pauseMenu .pause-title {
+            font-size: 1.8rem;
+            color: #fff;
+            margin-bottom: 5px;
+            font-weight: 300;
+            letter-spacing: 6px;
+        }
+        #pauseMenu .pause-level {
+            font-size: 1rem;
+            color: #8af0ff;
+            margin-bottom: 25px;
+            opacity: 0.7;
+            letter-spacing: 2px;
+        }
+        #pauseMenu .pause-level span { color: #f5a623; font-weight: bold; }
+        #pauseMenu .pause-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+        #pauseMenu .pause-buttons button {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(245,166,35,0.2);
+            color: #e0e0e0;
+            padding: 14px 0;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s ease;
+            width: 100%;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        #pauseMenu .pause-buttons button:hover {
+            background: rgba(245,166,35,0.15);
+            border-color: #f5a623;
+            transform: scale(1.02);
+            color: #fff;
+        }
+        #pauseMenu .pause-buttons button.primary {
+            background: #f5a623;
+            color: #0b0e14;
+            border-color: #f5a623;
+            box-shadow: 0 0 30px rgba(245,166,35,0.2);
+        }
+        #pauseMenu .pause-buttons button.primary:hover {
+            background: #ffc107;
+            box-shadow: 0 0 50px rgba(245,166,35,0.4);
+        }
+        #pauseMenu .pause-buttons button.danger {
+            color: #ff6666;
+            border-color: rgba(255,68,68,0.3);
+        }
+        #pauseMenu .pause-buttons button.danger:hover {
+            background: rgba(255,68,68,0.15);
+            border-color: #ff4444;
+            color: #ff8888;
+        }
+        #pauseMenu .pause-footer {
+            margin-top: 25px;
+            font-size: 0.7rem;
+            color: #555;
+            letter-spacing: 1px;
+        }
+
+        /* ===== МОБИЛЬНОЕ УПРАВЛЕНИЕ ===== */
+        .touch-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            pointer-events: none;
+            z-index: 15;
+            display: none;
+        }
+        .touch-controls.active { display: block; }
+        .touch-joystick {
+            position: absolute;
+            left: 30px;
+            bottom: 30px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.15);
+            pointer-events: auto;
+            touch-action: none;
+        }
+        .touch-joystick .knob {
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        .touch-buttons {
+            position: absolute;
+            right: 20px;
+            bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            pointer-events: none;
+        }
+        .touch-buttons button {
+            pointer-events: auto;
+            width: 70px; height: 70px;
+            border-radius: 50%;
+            border: 2px solid rgba(245,166,35,0.4);
+            background: rgba(20,30,40,0.7);
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: bold;
+            touch-action: none;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .touch-buttons .action-btn { background: rgba(255,102,0,0.6); border-color: #ff6600; }
+        .touch-buttons .reset-btn {
+            width: 50px; height: 50px;
+            font-size: 1.2rem;
+            background: rgba(255,0,0,0.3);
+            border-color: rgba(255,68,68,0.4);
+        }
+        .touch-look {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 50%;
+            height: 100%;
+            pointer-events: auto;
+            touch-action: none;
+            z-index: 5;
+            background: transparent;
+        }
+        @media (pointer: coarse) {
+            .touch-controls.active { display: block; }
+            #controls-hint { display: none; }
+            #pauseBtn { display: block; }
+        }
+        #gyroIndicator {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            color: #8af0ff;
+            font-size: 0.8rem;
+            background: rgba(0,0,0,0.4);
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(138,240,255,0.2);
+            display: none;
+            z-index: 10;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== ГЛАВНЫЙ ЭКРАН ===== -->
+    <div id="mainMenu">
+        <canvas class="bg-particles" id="particlesCanvas"></canvas>
+        <div class="deco-line"></div>
+        <div class="deco-line"></div>
+        <div class="content">
+            <div class="logo">PORTAL 3</div>
+            <div class="subtitle">⚡ Fan Edition</div>
+            <div class="version">v<span>1.0</span> Ultimate</div>
+            <div class="menu-buttons">
+                <button class="primary" id="btnNewGame">▶ Новая игра</button>
+                <button id="btnContinue">⏩ Продолжить</button>
+                <button id="btnSettings">⚙ Настройки</button>
+                <button class="vr-btn" id="btnVR">🥽 VR</button>
+                <button class="danger" id="btnExit">✕ Выход</button>
+            </div>
+            <div class="footer-text">© 2026 — <span>SWILL</span> · Aperture Science Tribute</div>
+        </div>
+    </div>
+
+    <!-- ===== ИГРОВЫЕ ЭЛЕМЕНТЫ ===== -->
+    <div id="ui">🎯 Кубов на месте: <span id="counter">0</span>/<span id="total">0</span> &nbsp;| Уровень <span id="levelNum">1</span></div>
+    <div id="message"></div>
+    <div id="crosshair">+</div>
+    <div id="gyroIndicator">🔄 Гироскоп</div>
+    <div id="controls-hint">WASD — движение, мышь — взгляд, 1-2-3 — порталы, Пробел — прыжок, E — взять/бросить куб, R — перезапуск</div>
+
+    <div class="portal-buttons" id="portalButtons">
+        <button class="blue" id="portalBlueBtn">🔵</button>
+        <button class="orange" id="portalOrangeBtn">🟠</button>
+        <button class="purple" id="portalPurpleBtn">🟣</button>
+    </div>
+
+    <button id="pauseBtn">⏸</button>
+
+    <!-- ===== НОРМАЛЬНОЕ МЕНЮ ПАУЗЫ ===== -->
+    <div id="pauseMenu">
+        <div class="pause-content">
+            <div class="pause-logo">⏸</div>
+            <div class="pause-title">ПАУЗА</div>
+            <div class="pause-level">Уровень <span id="pauseLevel">1</span></div>
+            <div class="pause-buttons">
+                <button class="primary" id="pauseResume">▶ Продолжить</button>
+                <button id="pauseRestart">🔄 Перезапустить уровень</button>
+                <button id="pauseSettings">⚙ Настройки</button>
+                <button class="danger" id="pauseExit">✕ Выйти в меню</button>
+            </div>
+            <div class="pause-footer">Нажмите ESC / Start на геймпаде</div>
+        </div>
+    </div>
+
+    <div class="level-complete" id="levelComplete">
+        <h2 id="completeTitle">🎉 Уровень пройден!</h2>
+        <p id="completeMsg">Отлично!</p>
+        <button id="nextLevelBtn">➡️ Далее</button>
+    </div>
+
+    <div class="touch-controls" id="touchControls">
+        <div class="touch-joystick" id="joystick">
+            <div class="knob" id="joystickKnob"></div>
+        </div>
+        <div class="touch-look" id="touchLook"></div>
+        <div class="touch-buttons">
+            <button class="action-btn" id="touchAction">E</button>
+            <button id="touchJump">⬆</button>
+            <button class="reset-btn" id="touchReset">↺</button>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // ============================================================
+        //  ГЛАВНЫЙ ЭКРАН – ЧАСТИЦЫ
+        // ============================================================
+        const canvasParticles = document.getElementById('particlesCanvas');
+        const ctxP = canvasParticles.getContext('2d');
+        let particles = [];
+        const PARTICLE_COUNT = 80;
+
+        function resizeParticles() {
+            canvasParticles.width = window.innerWidth;
+            canvasParticles.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeParticles);
+        resizeParticles();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvasParticles.width;
+                this.y = Math.random() * canvasParticles.height;
+                this.size = Math.random() * 2.5 + 0.5;
+                this.speedX = (Math.random() - 0.5) * 0.3;
+                this.speedY = (Math.random() - 0.5) * 0.3 - 0.1;
+                this.opacity = Math.random() * 0.4 + 0.1;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.y < 0) { this.y = canvasParticles.height; this.x = Math.random() * canvasParticles.width; }
+                if (this.x < 0 || this.x > canvasParticles.width) this.speedX *= -1;
+            }
+            draw() {
+                ctxP.beginPath();
+                ctxP.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctxP.fillStyle = `rgba(245, 166, 35, ${this.opacity})`;
+                ctxP.fill();
+            }
+        }
+
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            particles.push(new Particle());
+        }
+
+        function animateParticles() {
+            ctxP.clearRect(0, 0, canvasParticles.width, canvasParticles.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // ============================================================
+        //  КНОПКИ ГЛАВНОГО МЕНЮ
+        // ============================================================
+        const mainMenu = document.getElementById('mainMenu');
+        const btnNewGame = document.getElementById('btnNewGame');
+        const btnContinue = document.getElementById('btnContinue');
+        const btnSettings = document.getElementById('btnSettings');
+        const btnExit = document.getElementById('btnExit');
+        const btnVR = document.getElementById('btnVR');
+
+        btnContinue.addEventListener('click', () => alert('⏩ Демо-режим: загрузка последнего сохранения...'));
+        btnSettings.addEventListener('click', () => alert('⚙ Настройки: звук, графика, управление (демо)'));
+        btnExit.addEventListener('click', () => {
+            if (confirm('Выйти из игры?')) {
+                window.location.href = 'https://GFFRGOOGLE.github.io/portal3-fan-site/';
+            }
+        });
+
+        // ============================================================
+        //  3D-СЦЕНА (инициализация)
+        // ============================================================
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1f2a);
+        scene.fog = new THREE.Fog(0x1a1f2a, 30, 60);
+
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 1.6, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.xr.enabled = true;
+        document.body.insertBefore(renderer.domElement, document.getElementById('mainMenu'));
+
+        // Освещение
+        const ambientLight = new THREE.AmbientLight(0x404060);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffeedd, 1.5);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        const d = 20;
+        dirLight.shadow.camera.left = -d;
+        dirLight.shadow.camera.right = d;
+        dirLight.shadow.camera.top = d;
+        dirLight.shadow.camera.bottom = -d;
+        dirLight.shadow.camera.near = 1;
+        dirLight.shadow.camera.far = 40;
+        scene.add(dirLight);
+
+        const fillLight = new THREE.DirectionalLight(0x8888ff, 0.3);
+        fillLight.position.set(-10, 5, -10);
+        scene.add(fillLight);
+
+        const gridHelper = new THREE.GridHelper(30, 20, 0xf5a623, 0x444466);
+        gridHelper.position.y = -0.01;
+        scene.add(gridHelper);
+
+        // ============================================================
+        //  ФИЗИКА И ИГРОВОЙ МИР (упрощённо, для демо)
+        // ============================================================
+        const GRAVITY = -20;
+        const JUMP_SPEED = 8;
+        const MOVE_SPEED = 5;
+        const PLAYER_HEIGHT = 1.8;
+        const PLAYER_RADIUS = 0.5;
+
+        const playerGroup = new THREE.Group();
+        const sphereGeo = new THREE.SphereGeometry(0.5, 16, 16);
+        const sphereMat = new THREE.MeshStandardMaterial({ color: 0x8af0ff, emissive: 0x225566, emissiveIntensity: 0.2 });
+        const head = new THREE.Mesh(sphereGeo, sphereMat);
+        head.position.y = 1.2;
+        head.castShadow = true;
+        playerGroup.add(head);
+        const bodyGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.0, 8);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x4a6a8a });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 0.5;
+        body.castShadow = true;
+        playerGroup.add(body);
+        const eyeGeo = new THREE.SphereGeometry(0.1, 8, 8);
+        const eyeMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        const eye = new THREE.Mesh(eyeGeo, eyeMat);
+        eye.position.set(0.3, 1.3, 0.5);
+        playerGroup.add(eye);
+
+        playerGroup.position.set(0, 2, 0);
+        scene.add(playerGroup);
+
+        const playerPhysics = {
+            velocity: new THREE.Vector3(0, 0, 0),
+            onGround: false,
+        };
+
+        // ============================================================
+        //  УПРАВЛЕНИЕ: КЛАВИАТУРА, МЫШЬ, ГЕЙМПАД
+        // ============================================================
+        const keys = { w: false, a: false, s: false, d: false, space: false, e: false, r: false };
+        const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+        const PI_2 = Math.PI / 2;
+
+        document.addEventListener('keydown', (e) => {
+            const key = e.key;
+            if (key === 'w' || key === 'W') keys.w = true;
+            if (key === 'a' || key === 'A') keys.a = true;
+            if (key === 's' || key === 'S') keys.s = true;
+            if (key === 'd' || key === 'D') keys.d = true;
+            if (key === ' ') { keys.space = true; e.preventDefault(); }
+            if (key === 'e' || key === 'E') { keys.e = true; e.preventDefault(); }
+            if (key === 'r' || key === 'R') { keys.r = true; e.preventDefault(); }
+            if (key === 'Escape') { togglePause(); e.preventDefault(); }
+            if (key === '1') { placePortal('blue'); }
+            if (key === '2') { placePortal('orange'); }
+            if (key === '3') { placePortal('purple'); }
+        });
+        document.addEventListener('keyup', (e) => {
+            const key = e.key;
+            if (key === 'w' || key === 'W') keys.w = false;
+            if (key === 'a' || key === 'A') keys.a = false;
+            if (key === 's' || key === 'S') keys.s = false;
+            if (key === 'd' || key === 'D') keys.d = false;
+            if (key === ' ') { keys.space = false; e.preventDefault(); }
+            if (key === 'e' || key === 'E') keys.e = false;
+            if (key === 'r' || key === 'R') keys.r = false;
+        });
+
+        document.addEventListener('mousemove', (event) => {
+            if (document.pointerLockElement !== renderer.domElement) return;
+            const movementX = event.movementX || 0;
+            const movementY = event.movementY || 0;
+            euler.y -= movementX * 0.002;
+            euler.x -= movementY * 0.002;
+            euler.x = Math.max(-PI_2, Math.min(PI_2, euler.x));
+            if (!paused) camera.rotation.copy(euler);
+        });
+
+        // ============================================================
+        //  ПОРТАЛЫ (упрощённо)
+        // ============================================================
+        let portalBlue = null;
+        let portalOrange = null;
+        let portalPurple = null;
+
+        function createPortalMesh(color, emissiveColor, position) {
+            const geometry = new THREE.CircleGeometry(0.8, 16);
+            const material = new THREE.MeshStandardMaterial({
+                color: color,
+                emissive: emissiveColor,
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide,
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.copy(position);
+            mesh.lookAt(camera.position);
+            mesh.castShadow = false;
+            mesh.receiveShadow = false;
+            scene.add(mesh);
+            return mesh;
+        }
+
+        function removePortal(portal) {
+            if (portal) { scene.remove(portal); return null; }
+            return null;
+        }
+
+        function placePortal(type) {
+            const dir = new THREE.Vector3(0, 0, -1);
+            dir.applyQuaternion(camera.quaternion);
+            const pos = camera.position.clone().add(dir.clone().multiplyScalar(3));
+
+            switch (type) {
+                case 'blue':
+                    if (portalBlue) { scene.remove(portalBlue); portalBlue = null; }
+                    else { portalBlue = createPortalMesh(0x0066ff, 0x0044aa, pos); }
+                    break;
+                case 'orange':
+                    if (portalOrange) { scene.remove(portalOrange); portalOrange = null; }
+                    else { portalOrange = createPortalMesh(0xff6600, 0xaa3300, pos); }
+                    break;
+                case 'purple':
+                    if (portalPurple) { scene.remove(portalPurple); portalPurple = null; }
+                    else { portalPurple = createPortalMesh(0xaa44ff, 0x6622aa, pos); }
+                    break;
+            }
+        }
+
+        // ============================================================
+        //  МЕНЮ ПАУЗЫ
+        // ============================================================
+        let paused = false;
+        const pauseMenu = document.getElementById('pauseMenu');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const pauseResume = document.getElementById('pauseResume');
+        const pauseRestart = document.getElementById('pauseRestart');
+        const pauseSettings = document.getElementById('pauseSettings');
+        const pauseExit = document.getElementById('pauseExit');
+        const pauseLevel = document.getElementById('pauseLevel');
+
+        function togglePause() {
+            if (!gameStarted) return;
+            paused = !paused;
+            pauseMenu.classList.toggle('show', paused);
+            if (paused) {
+                pauseLevel.textContent = document.getElementById('levelNum').textContent || '1';
+            }
+        }
+
+        pauseBtn.addEventListener('click', togglePause);
+        pauseResume.addEventListener('click', togglePause);
+        pauseRestart.addEventListener('click', () => {
+            if (confirm('Перезапустить уровень?')) {
+                togglePause();
+                // Перезапуск уровня
+                if (typeof buildLevel === 'function') {
+                    buildLevel(currentLevelIndex);
+                }
+            }
+        });
+        pauseSettings.addEventListener('click', () => alert('⚙ Настройки (демо)'));
+        pauseExit.addEventListener('click', () => {
+            if (confirm('Выйти в главное меню?')) {
+                paused = false;
+                pauseMenu.classList.remove('show');
+                gameStarted = false;
+                mainMenu.classList.remove('hidden');
+                document.getElementById('ui').style.display = 'none';
+                document.getElementById('crosshair').style.display = 'none';
+                document.getElementById('controls-hint').style.display = 'none';
+                document.getElementById('portalButtons').style.display = 'none';
+                document.getElementById('pauseBtn').style.display = 'none';
+                // Удалить порталы
+                if (portalBlue) { scene.remove(portalBlue); portalBlue = null; }
+                if (portalOrange) { scene.remove(portalOrange); portalOrange = null; }
+                if (portalPurple) { scene.remove(portalPurple); portalPurple = null; }
+                // Восстановить главное меню
+            }
+        });
+
+        // ============================================================
+        //  ЗАПУСК ИГРЫ (упрощённый)
+        // ============================================================
+        let gameStarted = false;
+        let currentLevelIndex = 0;
+
+        function startGame() {
+            if (gameStarted) return;
+            gameStarted = true;
+            mainMenu.classList.add('hidden');
+            document.getElementById('ui').style.display = 'block';
+            document.getElementById('crosshair').style.display = 'block';
+            document.getElementById('controls-hint').style.display = 'block';
+            document.getElementById('portalButtons').style.display = 'flex';
+            document.getElementById('pauseBtn').style.display = 'block';
+
+            // Простой уровень
+            buildLevel(0);
+
+            if (!window._animating) {
+                window._animating = true;
+                animate();
+            }
+
+            // Запрос Pointer Lock для ПК
+            const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            if (!isMobile) {
+                renderer.domElement.addEventListener('click', () => {
+                    if (!document.pointerLockElement) {
+                        renderer.domElement.requestPointerLock();
+                    }
+                });
+            }
+        }
+
+        btnNewGame.addEventListener('click', startGame);
+
+        // ============================================================
+        //  ЦИКЛ АНИМАЦИИ (упрощённый)
+        // ============================================================
+        let clock = new THREE.Clock();
+
+        function animate() {
+            if (!gameStarted) {
+                requestAnimationFrame(animate);
+                return;
+            }
+            const delta = Math.min(clock.getDelta(), 0.05);
+            if (!paused) {
+                // Простая физика
+                let moveX = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
+                let moveZ = (keys.w ? 1 : 0) - (keys.s ? 1 : 0);
+                const forward = new THREE.Vector3(0, 0, -1);
+                forward.applyQuaternion(camera.quaternion);
+                forward.y = 0;
+                forward.normalize();
+                const right = new THREE.Vector3(1, 0, 0);
+                right.applyQuaternion(camera.quaternion);
+                right.y = 0;
+                right.normalize();
+                const moveVec = new THREE.Vector3(0, 0, 0);
+                moveVec.addScaledVector(forward, moveZ);
+                moveVec.addScaledVector(right, moveX);
+                if (moveVec.length() > 1) moveVec.normalize();
+                moveVec.multiplyScalar(MOVE_SPEED);
+                playerPhysics.velocity.x = moveVec.x;
+                playerPhysics.velocity.z = moveVec.z;
+                if (keys.space && playerPhysics.onGround) {
+                    playerPhysics.velocity.y = JUMP_SPEED;
+                    playerPhysics.onGround = false;
+                }
+                playerPhysics.velocity.y += GRAVITY * delta;
+                const newPos = playerGroup.position.clone();
+                newPos.x += playerPhysics.velocity.x * delta;
+                newPos.y += playerPhysics.velocity.y * delta;
+                newPos.z += playerPhysics.velocity.z * delta;
+                if (newPos.y < -5) {
+                    newPos.set(0, 2, 0);
+                    playerPhysics.velocity.set(0, 0, 0);
+                }
+                playerGroup.position.copy(newPos);
+                camera.position.copy(playerGroup.position);
+                camera.position.y += PLAYER_HEIGHT;
+                if (!paused) camera.rotation.copy(euler);
+            }
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+
+        // Заглушка для buildLevel
+        function buildLevel(index) {
+            currentLevelIndex = index;
+            document.getElementById('levelNum').textContent = index + 1;
+            document.getElementById('counter').textContent = '0';
+            document.getElementById('total').textContent = '0';
+        }
+
+        // VR поддержка
+        if (navigator.xr) {
+            navigator.xr.isSessionSupported('immersive-vr').then(supported => {
+                btnVR.style.display = supported ? 'inline-block' : 'none';
+            });
+        } else {
+            btnVR.style.display = 'none';
+        }
+
+        console.log('Portal 3 — Fan Edition загружена. Наслаждайтесь игрой!');
+    </script>
+</body>
+  </html>
