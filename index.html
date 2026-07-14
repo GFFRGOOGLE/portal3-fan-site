@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portal 3: Fan Edition — Главная</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        /* Стили для галереи */
+        .screenshots {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+        .screenshot-item {
+            background: #1a1f2a;
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #f5a62344;
+            transition: 0.3s;
+        }
+        .screenshot-item:hover {
+            transform: scale(1.02);
+            border-color: #f5a623;
+        }
+        .screenshot-item .placeholder {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #2a3a4a;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #8af0ff;
+            margin-bottom: 10px;
+            border: 2px dashed #f5a62355;
+        }
+        .screenshot-item .label {
+            font-size: 0.95rem;
+            color: #e0e0e0;
+        }
+        .screenshot-item .sub-label {
+            font-size: 0.8rem;
+            color: #888;
+        }
+        @media (max-width: 600px) {
+            .screenshots {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 12px;
+            }
+            .screenshot-item .placeholder {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- ЗАГОЛОВОК -->
+        <h1>🔶 PORTAL 3</h1>
+        <div class="sub">Фанатская версия • v1.0 Ultimate</div>
+
+        <!-- МЕНЮ -->
+        <div class="menu">
+            <a href="index.html">Главная</a>
+            <a href="download.html">Установка</a>
+            <a href="minecraft.html">Моды для Minecraft</a>
+            <a href="cheats.html">Чит-коды</a>
+            <a href="support.html">Поддержка</a>
+        </div>
+
+        <!-- ОПИСАНИЕ -->
+        <div class="section" style="border-left-color: #8af0ff;">
+            <h2>🎮 Portal 3: Fan Edition</h2>
+            <p>
+                <strong>Полноценная фанатская игра</strong> с кооперативом, ИИ-напарником Чел,
+                неотключаемой GLaDOS, 4 роботами, временными порталами и десятками пасхалок.
+            </p>
+            <p style="margin-top:12px;">
+                Доступна для <strong>Windows</strong>, <strong>Android</strong> и <strong>macOS</strong>.
+                Играйте в одиночку или с друзьями по сети.
+            </p>
+            <p style="margin-top:12px;">
+                <a href="download.html" class="btn-game">📥 Установить</a>
+                <a href="play.html" class="btn-game secondary" style="margin-left:10px;">▶ Играть в браузере</a>
+            </p>
+        </div>
+
+        <!-- НОВЫЙ РАЗДЕЛ: СКРИНШОТЫ -->
+        <div class="section" style="border-left-color: #f5a623;">
+            <h2>📸 Скриншоты</h2>
+            <p style="margin-bottom:10px; color:#aaa;">Примеры игрового процесса (замените на свои скриншоты)</p>
+            <div class="screenshots">
+                <div class="screenshot-item">
+                    <div class="placeholder">🔵🟠</div>
+                    <div class="label">Порталы</div>
+                    <div class="sub-label">Создание порталов в лаборатории</div>
+                </div>
+                <div class="screenshot-item">
+                    <div class="placeholder">🤖</div>
+                    <div class="label">Роботы</div>
+                    <div class="sub-label">Atlas, P‑body, Nova, CORE‑IX</div>
+                </div>
+                <div class="screenshot-item">
+                    <div class="placeholder">🔥</div>
+                    <div class="label">Битва с GLaDOS</div>
+                    <div class="sub-label">Финальная сцена</div>
+                </div>
+                <div class="screenshot-item">
+                    <div class="placeholder">🧩</div>
+                    <div class="label">Уровни</div>
+                    <div class="sub-label">Головоломки с временными порталами</div>
+                </div>
+                <div class="screenshot-item">
+                    <div class="placeholder">🎁</div>
+                    <div class="label">Секреты</div>
+                    <div class="sub-label">Поиск пасхалок</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ОСОБЕННОСТИ -->
+        <div class="section">
+            <h2>⚡ Особенности</h2>
+            <ul>
+                <li>10 уровней-головоломок с порталами</li>
+                <li>4 уникальных робота (Atlas, P‑body, Nova, CORE‑IX)</li>
+                <li>Временные порталы (фиолетовые)</li>
+                <li>ИИ Чел и GLaDOS с сотнями фраз</li>
+                <li>Режим разработчика и 20+ пасхалок</li>
+                <li>Сетевой кооператив до 4 игроков (в разработке)</li>
+            </ul>
+        </div>
+
+        <!-- ПЛАТФОРМЫ -->
+        <div class="section" style="border-left-color: #8af0ff;">
+            <h2>🌍 Доступные платформы</h2>
+            <div class="platforms">
+                <span>🖥️ Windows</span>
+                <span>📱 Android</span>
+                <span>🍏 macOS</span>
+            </div>
+            <p style="margin-top:12px; font-size:0.95rem;">
+                Следуйте инструкциям на странице <a href="download.html">«Установка»</a>.
+            </p>
+        </div>
+
+        <!-- ПОДВАЛ -->
+        <div class="footer">
+            © 2026 — SWILL · Portal 3: Fan Edition<br />
+            Сайт создан командой <strong>Swill Way</strong>
+        </div>
+
+    </div>
+</body>
+</html>
