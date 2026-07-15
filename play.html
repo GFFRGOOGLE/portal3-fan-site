@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Portal 3 — VR</title>
+    <style>
+        /* ===== ОБЩИЕ СТИЛИ ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; background: #0b0e14; font-family: 'Segoe UI', Arial, sans-serif; touch-action: none; }
+        canvas { display: block; }
+
+        /* ===== ГЛАВНЫЙ ЭКРАН ===== */
+        #mainMenu {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(ellipse at center, #0a0e1a 0%, #030507 100%);
+            z-index: 100;
+            transition: opacity 0.8s ease;
+            user-select: none;
+            pointer-events: auto;
+            overflow: hidden;
+        }
+        #mainMenu.hidden { opacity: 0; pointer-events: none; }
+
+        .bg-lines {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.15;
+            background:
+                repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(245,166,35,0.05) 40px, rgba(245,166,35,0.05) 41px),
+                repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(245,166,35,0.05) 40px, rgba(245,166,35,0.05) 41px);
+        }
+        .aperture-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid rgba(245,166,35,0.04);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .aperture-ring:nth-child(2) { top: -80px; right: -80px; width: 400px; height: 400px; }
+        .aperture-ring:nth-child(3) { bottom: -100px; left: -100px; width: 500px; height: 500px; border-color: rgba(138,240,255,0.03); }
+
+        #mainMenu .content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            pointer-events: auto;
+            animation: fadeInUp 1s ease;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #mainMenu .logo {
+            font-size: 6rem;
+            font-weight: 900;
+            color: #f5a623;
+            text-shadow: 0 0 60px #f5a62388, 0 0 120px #f5a62344, 0 0 200px #f5a62322;
+            letter-spacing: 12px;
+            margin-bottom: 5px;
+            animation: portalGlow 3s infinite alternate;
+        }
+        @keyframes portalGlow {
+            0% { text-shadow: 0 0 40px #f5a62366, 0 0 80px #f5a62333, 0 0 120px #f5a62322; }
+            100% { text-shadow: 0 0 80px #f5a623aa, 0 0 160px #f5a62355, 0 0 240px #f5a62333; }
+        }
+        #mainMenu .logo .sub {
+            font-size: 1.8rem;
+            color: #8af0ff;
+            letter-spacing: 6px;
+            font-weight: 300;
+            opacity: 0.8;
+            display: block;
+            margin-top: -10px;
+            text-shadow: 0 0 20px #8af0ff33;
+        }
+        #mainMenu .version {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 40px;
+            letter-spacing: 4px;
+            font-weight: 300;
+        }
+        #mainMenu .version span { color: #f5a623; }
+
+        #mainMenu .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            width: 280px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+        #mainMenu .menu-buttons button {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(245,166,35,0.25);
+            color: #e0e0e0;
+            padding: 16px 0;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.3s ease;
+            width: 100%;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            pointer-events: auto;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(4px);
+            z-index: 2;
+        }
+        #mainMenu .menu-buttons button::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(245,166,35,0.08), transparent);
+            transition: 0.6s;
+        }
+        #mainMenu .menu-buttons button:hover::before { left: 100%; }
+        #mainMenu .menu-buttons button:hover {
+            background: rgba(245,166,35,0.12);
+            border-color: #f5a623;
+            color: #fff;
+            box-shadow: 0 0 30px rgba(245,166,35,0.08);
+        }
+        #mainMenu .menu-buttons button.primary {
+            background: rgba(245,166,35,0.15);
+            border-color: #f5a623;
+            color: #f5a623;
+            box-shadow: 0 0 40px rgba(245,166,35,0.08);
+        }
+        #mainMenu .menu-buttons button.primary:hover {
+            background: #f5a623;
+            color: #0b0e14;
+            box-shadow: 0 0 60px rgba(245,166,35,0.3);
+        }
+        #mainMenu .menu-buttons button.danger {
+            color: #884444;
+            border-color: rgba(255,68,68,0.15);
+        }
+        #mainMenu .menu-buttons button.danger:hover {
+            background: rgba(255,68,68,0.08);
+            border-color: #ff4444;
+            color: #ff8888;
+        }
+        #mainMenu .menu-buttons button.vr-btn {
+            border-color: rgba(136,136,255,0.15);
+            color: #6666aa;
+        }
+        #mainMenu .menu-buttons button.vr-btn:hover {
+            background: rgba(136,136,255,0.08);
+            border-color: #8888ff;
+            color: #aaaaff;
+        }
+        #mainMenu .footer-text {
+            margin-top: 50px;
+            font-size: 0.7rem;
+            color: #333;
+            letter-spacing: 3px;
+            pointer-events: none;
+            font-weight: 300;
+            position: relative;
+            z-index: 2;
+        }
+        #mainMenu .footer-text span { color: #f5a62333; }
+
+        /* ===== ИГРОВОЙ ИНТЕРФЕЙС ===== */
+        #ui {
+            position: absolute;
+            top: 20px; left: 20px;
+            color: #fff;
+            background: rgba(0,0,0,0.6);
+            padding: 10px 20px;
+            border-radius: 4px;
+            border-left: 4px solid #8af0ff;
+            pointer-events: none;
+            z-index: 10;
+            font-size: 1.1rem;
+            display: none;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+        #crosshair {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255,255,255,0.15);
+            font-size: 2.5rem;
+            pointer-events: none;
+            z-index: 10;
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+            display: none;
+            font-weight: 100;
+        }
+        #controls-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 0; width: 100%;
+            text-align: center;
+            color: #666;
+            font-size: 0.75rem;
+            pointer-events: none;
+            z-index: 10;
+            display: none;
+            letter-spacing: 1px;
+            font-weight: 300;
+        }
+
+        #fullscreenBtn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #aaa;
+            font-size: 1.2rem;
+            padding: 8px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            z-index: 10;
+            display: none;
+            transition: 0.3s;
+            letter-spacing: 1px;
+            font-weight: 300;
+        }
+        #fullscreenBtn:hover {
+            background: rgba(245,166,35,0.15);
+            border-color: #f5a623;
+            color: #fff;
+        }
+
+        .level-complete {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 20;
+            backdrop-filter: blur(6px);
+        }
+        .level-complete.show { display: flex; }
+        .level-complete h2 { font-size: 3rem; color: #f5a623; text-shadow: 0 0 40px #f5a62388; margin-bottom: 10px; }
+        .level-complete p { font-size: 1.2rem; color: #fff; margin-bottom: 25px; }
+        .level-complete button {
+            background: #f5a623; color: #0b0e14; border: none;
+            padding: 14px 50px; border-radius: 4px; font-size: 1.4rem; font-weight: 700;
+            cursor: pointer; transition: 0.3s; box-shadow: 0 0 30px #f5a62366;
+            letter-spacing: 2px;
+        }
+        .level-complete button:hover { transform: scale(1.05); background: #ffc107; }
+
+        #pauseBtn {
+            position: absolute;
+            top: 20px;
+            right: 80px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #aaa;
+            font-size: 1.2rem;
+            padding: 8px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            z-index: 10;
+            display: none;
+            transition: 0.3s;
+        }
+        #pauseBtn:hover {
+            background: rgba(245,166,35,0.15);
+            border-color: #f5a623;
+            color: #fff;
+        }
+
+        #pauseMenu {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 50;
+            backdrop-filter: blur(8px);
+        }
+        #pauseMenu.show { display: flex; }
+        #pauseMenu .pause-content {
+            text-align: center;
+            padding: 40px;
+            border-radius: 4px;
+            background: rgba(10,14,26,0.8);
+            border: 1px solid rgba(245,166,35,0.1);
+            box-shadow: 0 0 80px rgba(0,0,0,0.5);
+            max-width: 400px;
+            width: 90%;
+        }
+        #pauseMenu .pause-logo { font-size: 3rem; color: #f5a623; text-shadow: 0 0 40px #f5a62388; margin-bottom: 5px; font-weight: 900; letter-spacing: 4px; }
+        #pauseMenu .pause-title { font-size: 1.8rem; color: #fff; margin-bottom: 5px; font-weight: 300; letter-spacing: 6px; }
+        #pauseMenu .pause-level { font-size: 1rem; color: #8af0ff; margin-bottom: 25px; opacity: 0.7; letter-spacing: 2px; }
+        #pauseMenu .pause-level span { color: #f5a623; font-weight: bold; }
+        #pauseMenu .pause-buttons { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        #pauseMenu .pause-buttons button {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(245,166,35,0.15); color: #c0c0c0;
+            padding: 14px 0; border-radius: 4px; font-size: 1.1rem; font-weight: 500; cursor: pointer;
+            transition: 0.3s ease; width: 100%; letter-spacing: 3px; text-transform: uppercase;
+        }
+        #pauseMenu .pause-buttons button:hover {
+            background: rgba(245,166,35,0.08); border-color: #f5a623; color: #fff;
+        }
+        #pauseMenu .pause-buttons button.primary {
+            background: rgba(245,166,35,0.12); border-color: #f5a623; color: #f5a623;
+        }
+        #pauseMenu .pause-buttons button.primary:hover {
+            background: #f5a623; color: #0b0e14;
+        }
+        #pauseMenu .pause-buttons button.danger {
+            color: #884444; border-color: rgba(255,68,68,0.15);
+        }
+        #pauseMenu .pause-buttons button.danger:hover {
+            background: rgba(255,68,68,0.08); border-color: #ff4444; color: #ff8888;
+        }
+        #pauseMenu .pause-footer { margin-top: 25px; font-size: 0.7rem; color: #444; letter-spacing: 2px; }
+
+        /* ===== МОБИЛЬНОЕ УПРАВЛЕНИЕ (ДЖОЙСТИК) ===== */
+        .touch-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            pointer-events: none;
+            z-index: 15;
+            display: none;
+        }
+        .touch-controls.active { display: block; }
+        .touch-joystick {
+            position: absolute;
+            left: 30px;
+            bottom: 30px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.08);
+            pointer-events: auto;
+            touch-action: none;
+        }
+        .touch-joystick .knob {
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        .touch-look {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 50%;
+            height: 100%;
+            pointer-events: auto;
+            touch-action: none;
+            z-index: 5;
+            background: transparent;
+        }
+        @media (pointer: coarse) {
+            .touch-controls.active { display: block; }
+            #controls-hint { display: none; }
+            #pauseBtn { display: block; }
+        }
+        #gyroIndicator {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            color: #8af0ff44;
+            font-size: 0.7rem;
+            background: rgba(0,0,0,0.3);
+            padding: 4px 12px;
+            border-radius: 4px;
+            border: 1px solid rgba(138,240,255,0.08);
+            display: none;
+            z-index: 10;
+            pointer-events: none;
+            letter-spacing: 1px;
+        }
+        /* VR-индикатор */
+        #vrIndicator {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #8888ff;
+            font-size: 1rem;
+            background: rgba(0,0,0,0.5);
+            padding: 4px 16px;
+            border-radius: 4px;
+            border: 1px solid #8888ff33;
+            display: none;
+            z-index: 10;
+            pointer-events: none;
+            letter-spacing: 2px;
+            font-weight: 300;
+        }
+        @media (max-width: 600px) {
+            #mainMenu .logo { font-size: 3.5rem; }
+            #mainMenu .logo .sub { font-size: 1.2rem; }
+            #mainMenu .menu-buttons { width: 220px; }
+            #mainMenu .menu-buttons button { font-size: 0.9rem; padding: 14px 0; }
+            #ui { font-size: 0.9rem; padding: 6px 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== ГЛАВНЫЙ ЭКРАН ===== -->
+    <div id="mainMenu">
+        <div class="bg-lines"></div>
+        <div class="aperture-ring"></div>
+        <div class="aperture-ring"></div>
+        <div class="content">
+            <div class="logo">
+                PORTAL 3
+                <span class="sub">⚡ Fan Edition</span>
+            </div>
+            <div class="version">v<span>1.0</span> Ultimate</div>
+            <div class="menu-buttons">
+                <button class="primary" id="btnNewGame">▶ Новая игра</button>
+                <button id="btnContinue">⏩ Продолжить</button>
+                <button class="vr-btn" id="btnVR">🥽 VR</button>
+                <button class="danger" id="btnExit">✕ Выход</button>
+            </div>
+            <div class="footer-text">© 2026 — <span>SWILL</span> · Aperture Science</div>
+        </div>
+        <div id="vrIndicator">🥽 VR-режим</div>
+    </div>
+
+    <!-- ===== ИГРОВОЙ ИНТЕРФЕЙС ===== -->
+    <div id="ui">🎯 Кубов: <span id="counter">0</span>/<span id="total">0</span> &nbsp;| Уровень <span id="levelNum">1</span></div>
+    <div id="crosshair">+</div>
+    <div id="gyroIndicator">🔄 VR-гироскоп</div>
+    <div id="controls-hint">WASD — движение | мышь — взгляд | Пробел — прыжок | 1/2/3 — порталы</div>
+
+    <button id="fullscreenBtn">⛶ Полный экран</button>
+    <button id="pauseBtn">⏸</button>
+
+    <div id="pauseMenu">
+        <div class="pause-content">
+            <div class="pause-logo">⏸</div>
+            <div class="pause-title">ПАУЗА</div>
+            <div class="pause-level">Уровень <span id="pauseLevel">1</span></div>
+            <div class="pause-buttons">
+                <button class="primary" id="pauseResume">▶ Продолжить</button>
+                <button id="pauseRestart">🔄 Перезапустить</button>
+                <button class="danger" id="pauseExit">✕ Выйти</button>
+            </div>
+            <div class="pause-footer">ESC / Start на геймпаде</div>
+        </div>
+    </div>
+
+    <div class="level-complete" id="levelComplete">
+        <h2 id="completeTitle">🎉 Уровень пройден!</h2>
+        <p id="completeMsg">Отлично!</p>
+        <button id="nextLevelBtn">➡️ Далее</button>
+    </div>
+
+    <!-- ===== МОБИЛЬНОЕ УПРАВЛЕНИЕ (ДЖОЙСТИК) ===== -->
+    <div class="touch-controls" id="touchControls">
+        <div class="touch-joystick" id="joystick">
+            <div class="knob" id="joystickKnob"></div>
+        </div>
+        <div class="touch-look" id="touchLook"></div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // ============================================================
+        //  КНОПКИ МЕНЮ
+        // ============================================================
+        const mainMenu = document.getElementById('mainMenu');
+        const btnNewGame = document.getElementById('btnNewGame');
+        const btnContinue = document.getElementById('btnContinue');
+        const btnExit = document.getElementById('btnExit');
+        const btnVR = document.getElementById('btnVR');
+        const vrIndicator = document.getElementById('vrIndicator');
+
+        btnNewGame.addEventListener('click', () => startGame(0));
+        btnContinue.addEventListener('click', () => {
+            const save = localStorage.getItem('portal3_save');
+            if (save) {
+                try { const data = JSON.parse(save); startGame(data.level || 0); }
+                catch(e) { alert('Ошибка загрузки сохранения.'); }
+            } else alert('Нет сохранений.');
+        });
+        btnExit.addEventListener('click', () => {
+            if (confirm('Выйти из игры?')) window.location.href = 'https://GFFRGOOGLE.github.io/portal3-fan-site/';
+        });
+
+        // ============================================================
+        //  VR-РЕЖИМ (WebXR)
+        // ============================================================
+        let isVRActive = false;
+        let vrSession = null;
+        let vrFrameLoop = null;
+
+        async function startVR() {
+            if (!navigator.xr) {
+                alert('Ваш браузер не поддерживает WebXR (VR).');
+                return;
+            }
+            try {
+                vrSession = await navigator.xr.requestSession('immersive-vr', {
+                    optionalFeatures: ['local-floor', 'bounded-floor']
+                });
+
+                isVRActive = true;
+                btnVR.textContent = '🥽 Выйти из VR';
+                vrIndicator.style.display = 'block';
+                document.getElementById('gyroIndicator').style.display = 'block';
+                document.getElementById('gyroIndicator').textContent = '🔄 VR-гироскоп активен';
+
+                // Настраиваем рендерер для VR
+                renderer.xr.setSession(vrSession);
+
+                // Показываем игру, если не запущена
+                if (!gameStarted) startGame(0);
+
+                // Скрываем интерфейс в VR
+                document.getElementById('ui').style.opacity = '0.3';
+                document.getElementById('crosshair').style.display = 'none';
+                document.getElementById('controls-hint').style.display = 'none';
+
+                vrSession.addEventListener('end', () => {
+                    endVR();
+                });
+
+                // Запускаем VR-рендеринг
+                if (!vrFrameLoop) {
+                    vrFrameLoop = true;
+                    animateVR();
+                }
+
+            } catch (err) {
+                alert('Не удалось войти в VR-режим: ' + err.message);
+                console.error('VR error:', err);
+            }
+        }
+
+        function endVR() {
+            isVRActive = false;
+            btnVR.textContent = '🥽 VR';
+            vrIndicator.style.display = 'none';
+            document.getElementById('gyroIndicator').style.display = 'none';
+            renderer.xr.setSession(null);
+            document.getElementById('ui').style.opacity = '1';
+            document.getElementById('crosshair').style.display = 'block';
+            document.getElementById('controls-hint').style.display = 'block';
+            vrSession = null;
+            vrFrameLoop = false;
+        }
+
+        btnVR.addEventListener('click', () => {
+            if (isVRActive) {
+                if (vrSession) {
+                    vrSession.end();
+                } else {
+                    endVR();
+                }
+            } else {
+                startVR();
+            }
+        });
+
+        // ============================================================
+        //  3D-СЦЕНА
+        // ============================================================
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1f2a);
+        scene.fog = new THREE.Fog(0x1a1f2a, 30, 60);
+
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 1.6, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.xr.enabled = true; // Включаем WebXR
+        renderer.xr.setReferenceSpaceType('local-floor');
+        document.body.insertBefore(renderer.domElement, document.getElementById('mainMenu'));
+
+        // Освещение
+        const ambientLight = new THREE.AmbientLight(0x404060);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        const d = 15;
+        dirLight.shadow.camera.left = -d;
+        dirLight.shadow.camera.right = d;
+        dirLight.shadow.camera.top = d;
+        dirLight.shadow.camera.bottom = -d;
+        dirLight.shadow.camera.near = 1;
+        dirLight.shadow.camera.far = 30;
+        scene.add(dirLight);
+
+        const fillLight = new THREE.DirectionalLight(0x8888ff, 0.3);
+        fillLight.position.set(-10, 5, -10);
+        scene.add(fillLight);
+
+        // ============================================================
+        //  КАРТА
+        // ============================================================
+        let levelObjects = [];
+
+        function createPlatform(x, y, z, w, h, d, color = 0x3a5a6a) {
+            const geo = new THREE.BoxGeometry(w, h, d);
+            const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0.1 });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y, z);
+            mesh.receiveShadow = true;
+            mesh.castShadow = true;
+            scene.add(mesh);
+            return mesh;
+        }
+
+        function createCube(x, y, z, color = 0xf5a623) {
+            const geo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
+            const mat = new THREE.MeshStandardMaterial({ color, emissive: 0x553311, emissiveIntensity: 0.2 });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+            return mesh;
+        }
+
+        function createButton(x, y, z, color = 0xff4444) {
+            const geo = new THREE.BoxGeometry(0.8, 0.2, 0.8);
+            const mat = new THREE.MeshStandardMaterial({ color, emissive: 0x440000 });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y, z);
+            mesh.receiveShadow = true;
+            mesh.castShadow = true;
+            scene.add(mesh);
+            return mesh;
+        }
+
+        function createDoor(x, y, z, color = 0x884444) {
+            const geo = new THREE.BoxGeometry(1.2, 1.8, 0.3);
+            const mat = new THREE.MeshStandardMaterial({ color, emissive: 0x220000 });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+            return mesh;
+        }
+
+        function createGoal(x, y, z) {
+            const geo = new THREE.BoxGeometry(1, 0.2, 1);
+            const mat = new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x004400, transparent: true, opacity: 0.5 });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y, z);
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+            return mesh;
+        }
+
+        function buildLevel() {
+            levelObjects.forEach(obj => scene.remove(obj));
+            levelObjects = [];
+
+            // Пол
+            levelObjects.push(createPlatform(0, -0.2, 0, 12, 0.4, 12, 0x2a3a4a));
+            // Платформы
+            levelObjects.push(createPlatform(2, 0.8, 3, 2, 0.2, 2, 0x4a6a7a));
+            levelObjects.push(createPlatform(-2, 0.8, -3, 2, 0.2, 2, 0x4a6a7a));
+            levelObjects.push(createPlatform(4, 0.4, -3, 2, 0.2, 2, 0x4a6a7a));
+            levelObjects.push(createPlatform(-4, 0.4, 3, 2, 0.2, 2, 0x4a6a7a));
+            // Куб
+            levelObjects.push(createCube(2.5, 1.2, 3.5));
+            // Кнопка
+            levelObjects.push(createButton(-1, 0.2, -1));
+            // Дверь
+            levelObjects.push(createDoor(4, 0.4, 3.5));
+            // Цель
+            levelObjects.push(createGoal(5, 0.2, 4.5));
+            // Портал входа
+            const portalGeo = new THREE.CircleGeometry(0.8, 16);
+            const portalMatIn = new THREE.MeshStandardMaterial({ color: 0x0066ff, emissive: 0x0044aa, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
+            const portalIn = new THREE.Mesh(portalGeo, portalMatIn);
+            portalIn.position.set(3, 0.8, 4.5);
+            portalIn.rotation.x = -Math.PI / 2;
+            scene.add(portalIn);
+            levelObjects.push(portalIn);
+            // Портал выхода
+            const portalMatOut = new THREE.MeshStandardMaterial({ color: 0xff6600, emissive: 0xaa3300, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
+            const portalOut = new THREE.Mesh(portalGeo, portalMatOut);
+            portalOut.position.set(-3, 0.8, -4.5);
+            portalOut.rotation.x = -Math.PI / 2;
+            scene.add(portalOut);
+            levelObjects.push(portalOut);
+
+            playerGroup.position.set(0, 2, 0);
+            playerPhysics.velocity.set(0, 0, 0);
+            playerPhysics.onGround = false;
+        }
+
+        // ============================================================
+        //  ИГРОК
+        // ============================================================
+        const GRAVITY = -20;
+        const JUMP_SPEED = 8;
+        const MOVE_SPEED = 5;
+        const PLAYER_HEIGHT = 1.8;
+        const PLAYER_RADIUS = 0.5;
+
+        const playerGroup = new THREE.Group();
+        const sphereGeo = new THREE.SphereGeometry(0.5, 16, 16);
+        const sphereMat = new THREE.MeshStandardMaterial({ color: 0x8af0ff, emissive: 0x225566, emissiveIntensity: 0.15 });
+        const head = new THREE.Mesh(sphereGeo, sphereMat);
+        head.position.y = 1.2;
+        head.castShadow = true;
+        playerGroup.add(head);
+        const bodyGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.0, 8);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x4a6a8a });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 0.5;
+        body.castShadow = true;
+        playerGroup.add(body);
+        const eyeGeo = new THREE.SphereGeometry(0.1, 8, 8);
+        const eyeMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        const eye = new THREE.Mesh(eyeGeo, eyeMat);
+        eye.position.set(0.3, 1.3, 0.5);
+        playerGroup.add(eye);
+
+        playerGroup.position.set(0, 2, 0);
+        scene.add(playerGroup);
+
+        const playerPhysics = {
+            velocity: new THREE.Vector3(0, 0, 0),
+            onGround: false,
+        };
+
+        // ============================================================
+        //  УПРАВЛЕНИЕ
+        // ============================================================
+        const keys = { w: false, a: false, s: false, d: false, space: false, e: false, r: false };
+        const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+        const PI_2 = Math.PI / 2;
+        let paused = false;
+
+        document.addEventListener('keydown', (e) => {
+            const key = e.key;
+            if (key === 'w' || key === 'W') keys.w = true;
+            if (key === 'a' || key === 'A') keys.a = true;
+            if (key === 's' || key === 'S') keys.s = true;
+            if (key === 'd' || key === 'D') keys.d = true;
+            if (key === ' ') { keys.space = true; e.preventDefault(); }
+            if (key === 'e' || key === 'E') { keys.e = true; e.preventDefault(); }
+            if (key === 'r' || key === 'R') { keys.r = true; e.preventDefault(); }
+            if (key === 'Escape') { togglePause(); e.preventDefault(); }
+            if (key === '1') { placePortal('blue'); }
+            if (key === '2') { placePortal('orange'); }
+            if (key === '3') { placePortal('purple'); }
+        });
+        document.addEventListener('keyup', (e) => {
+            const key = e.key;
+            if (key === 'w' || key === 'W') keys.w = false;
+            if (key === 'a' || key === 'A') keys.a = false;
+            if (key === 's' || key === 'S') keys.s = false;
+            if (key === 'd' || key === 'D') keys.d = false;
+            if (key === ' ') { keys.space = false; e.preventDefault(); }
+            if (key === 'e' || key === 'E') keys.e = false;
+            if (key === 'r' || key === 'R') keys.r = false;
+        });
+
+        // === МЫШЬ (поворот камеры) ===
+        document.addEventListener('mousemove', (event) => {
+            if (document.pointerLockElement !== renderer.domElement) return;
+            if (isVRActive) return; // В VR используем отслеживание головы
+            const movementX = event.movementX || 0;
+            const movementY = event.movementY || 0;
+            euler.y -= movementX * 0.002;
+            euler.x -= movementY * 0.002;
+            euler.x = Math.max(-PI_2, Math.min(PI_2, euler.x));
+            if (!paused) camera.rotation.copy(euler);
+        });
+
+        // ============================================================
+        //  ГИРОСКОП (только в VR)
+        // ============================================================
+        let gyroActive = false;
+        let gyroAlpha = 0, gyroBeta = 0, gyroGamma = 0;
+
+        function handleOrientation(event) {
+            if (!event.alpha || !event.beta || !event.gamma) return;
+            if (!isVRActive) return; // Гироскоп активен только в VR
+            gyroAlpha = event.alpha || 0;
+            gyroBeta = event.beta || 0;
+            gyroGamma = event.gamma || 0;
+            gyroActive = true;
+        }
+
+        function enableGyro() {
+            if (window.DeviceOrientationEvent) {
+                if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    DeviceOrientationEvent.requestPermission().then(state => {
+                        if (state === 'granted') {
+                            window.addEventListener('deviceorientation', handleOrientation);
+                        }
+                    }).catch(() => {});
+                } else {
+                    window.addEventListener('deviceorientation', handleOrientation);
+                }
+            }
+        }
+
+        function disableGyro() {
+            if (window.DeviceOrientationEvent) {
+                window.removeEventListener('deviceorientation', handleOrientation);
+                gyroActive = false;
+            }
+        }
+
+        // ============================================================
+        //  ПОРТАЛЫ
+        // ============================================================
+        let portalBlue = null;
+        let portalOrange = null;
+        let portalPurple = null;
+
+        function createPortalMesh(color, emissive, pos) {
+            const geo = new THREE.CircleGeometry(0.8, 24);
+            const mat = new THREE.MeshStandardMaterial({ color, emissive, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.copy(pos);
+            mesh.lookAt(camera.position);
+            scene.add(mesh);
+            return mesh;
+        }
+
+        function placePortal(type) {
+            const dir = new THREE.Vector3(0, 0, -1);
+            dir.applyQuaternion(camera.quaternion);
+            const pos = camera.position.clone().add(dir.clone().multiplyScalar(3));
+            pos.y = Math.max(0.2, pos.y);
+
+            switch (type) {
+                case 'blue':
+                    if (portalBlue) { scene.remove(portalBlue); portalBlue = null; }
+                    else { portalBlue = createPortalMesh(0x0066ff, 0x0044aa, pos); }
+                    break;
+                case 'orange':
+                    if (portalOrange) { scene.remove(portalOrange); portalOrange = null; }
+                    else { portalOrange = createPortalMesh(0xff6600, 0xaa3300, pos); }
+                    break;
+                case 'purple':
+                    if (portalPurple) { scene.remove(portalPurple); portalPurple = null; }
+                    else { portalPurple = createPortalMesh(0xaa44ff, 0x6622aa, pos); }
+                    break;
+            }
+        }
+
+        // ============================================================
+        //  ПАУЗА
+        // ============================================================
+        const pauseMenu = document.getElementById('pauseMenu');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const pauseResume = document.getElementById('pauseResume');
+        const pauseRestart = document.getElementById('pauseRestart');
+        const pauseExit = document.getElementById('pauseExit');
+
+        function togglePause() {
+            if (!gameStarted) return;
+            paused = !paused;
+            pauseMenu.classList.toggle('show', paused);
+            if (paused) document.getElementById('pauseLevel').textContent = document.getElementById('levelNum').textContent || '1';
+        }
+
+        pauseBtn.addEventListener('click', togglePause);
+        pauseResume.addEventListener('click', togglePause);
+        pauseRestart.addEventListener('click', () => {
+            if (confirm('Перезапустить уровень?')) {
+                paused = false;
+                pauseMenu.classList.remove('show');
+                buildLevel();
+                document.getElementById('levelNum').textContent = '1';
+            }
+        });
+        pauseExit.addEventListener('click', () => {
+            if (confirm('Выйти в главное меню?')) {
+                paused = false;
+                pauseMenu.classList.remove('show');
+                gameStarted = false;
+                if (isVRActive) { endVR(); }
+                mainMenu.classList.remove('hidden');
+                document.getElementById('ui').style.display = 'none';
+                document.getElementById('crosshair').style.display = 'none';
+                document.getElementById('controls-hint').style.display = 'none';
+                document.getElementById('pauseBtn').style.display = 'none';
+                document.getElementById('fullscreenBtn').style.display = 'none';
+            }
+        });
+
+        // ============================================================
+        //  FULLSCREEN
+        // ============================================================
+        document.getElementById('fullscreenBtn').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+                document.getElementById('fullscreenBtn').textContent = '⛶ Выйти';
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                    document.getElementById('fullscreenBtn').textContent = '⛶ Полный экран';
+                }
+            }
+        });
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                document.getElementById('fullscreenBtn').textContent = '⛶ Полный экран';
+            }
+        });
+
+        // ============================================================
+        //  ЗАПУСК ИГРЫ
+        // ============================================================
+        let gameStarted = false;
+
+        function startGame(level = 0) {
+            if (gameStarted) return;
+            gameStarted = true;
+            mainMenu.classList.add('hidden');
+            document.getElementById('ui').style.display = 'block';
+            document.getElementById('crosshair').style.display = 'block';
+            document.getElementById('controls-hint').style.display = 'block';
+            document.getElementById('pauseBtn').style.display = 'block';
+            document.getElementById('fullscreenBtn').style.display = 'block';
+
+            const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            if (isMobile) {
+                document.getElementById('touchControls').classList.add('active');
+            }
+
+            buildLevel();
+            document.getElementById('levelNum').textContent = level + 1;
+
+            // Включаем гироскоп, если не в VR
+            if (!isVRActive) {
+                disableGyro();
+            }
+
+            if (!window._animating) {
+                window._animating = true;
+                animate();
+            }
+
+            if (!isMobile) {
+                renderer.domElement.addEventListener('click', () => {
+                    if (!document.pointerLockElement) {
+                        renderer.domElement.requestPointerLock();
+                    }
+                });
+            }
+        }
+
+        // ============================================================
+        //  АНИМАЦИЯ (обычная)
+        // ============================================================
+        let clock = new THREE.Clock();
+        let levelCompleteShown = false;
+
+        function animate() {
+            if (!gameStarted) {
+                requestAnimationFrame(animate);
+                return;
+            }
+            const delta = Math.min(clock.getDelta(), 0.05);
+            if (!paused && !isVRActive) {
+                // Движение
+                let moveX = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
+                let moveZ = (keys.w ? 1 : 0) - (keys.s ? 1 : 0);
+                const forward = new THREE.Vector3(0, 0, -1);
+                forward.applyQuaternion(camera.quaternion);
+                forward.y = 0;
+                forward.normalize();
+                const right = new THREE.Vector3(1, 0, 0);
+                right.applyQuaternion(camera.quaternion);
+                right.y = 0;
+                right.normalize();
+                const moveVec = new THREE.Vector3(0, 0, 0);
+                moveVec.addScaledVector(forward, moveZ);
+                moveVec.addScaledVector(right, moveX);
+                if (moveVec.length() > 1) moveVec.normalize();
+                moveVec.multiplyScalar(MOVE_SPEED);
+                playerPhysics.velocity.x = moveVec.x;
+                playerPhysics.velocity.z = moveVec.z;
+                if (keys.space && playerPhysics.onGround) {
+                    playerPhysics.velocity.y = JUMP_SPEED;
+                    playerPhysics.onGround = false;
+                }
+                playerPhysics.velocity.y += GRAVITY * delta;
+                const newPos = playerGroup.position.clone();
+                newPos.x += playerPhysics.velocity.x * delta;
+                newPos.y += playerPhysics.velocity.y * delta;
+                newPos.z += playerPhysics.velocity.z * delta;
+                if (newPos.y < -5) {
+                    newPos.set(0, 2, 0);
+                    playerPhysics.velocity.set(0, 0, 0);
+                }
+                if (newPos.y < 0) { newPos.y = 0; playerPhysics.velocity.y = 0; playerPhysics.onGround = true; }
+                playerGroup.position.copy(newPos);
+                camera.position.copy(playerGroup.position);
+                camera.position.y += PLAYER_HEIGHT;
+                if (!paused && !isVRActive) camera.rotation.copy(euler);
+
+                // Проверка цели
+                const goalPos = new THREE.Vector3(5, 0.2, 4.5);
+                if (playerGroup.position.distanceTo(goalPos) < 1.5 && !levelCompleteShown) {
+                    levelCompleteShown = true;
+                    document.getElementById('levelComplete').classList.add('show');
+                    document.getElementById('nextLevelBtn').onclick = () => {
+                        levelCompleteShown = false;
+                        document.getElementById('levelComplete').classList.remove('show');
+                        buildLevel();
+                        document.getElementById('levelNum').textContent = '1';
+                        localStorage.setItem('portal3_save', JSON.stringify({ level: 0 }));
+                    };
+                }
+
+                // Сохранение
+                if (Math.floor(Date.now() / 5000) % 2 === 0) {
+                    localStorage.setItem('portal3_save', JSON.stringify({ level: 0 }));
+                }
+            }
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+
+        // ============================================================
+        //  VR-АНИМАЦИЯ (стерео-рендеринг)
+        // ============================================================
+        function animateVR() {
+            if (!isVRActive) {
+                vrFrameLoop = false;
+                return;
+            }
+
+            // В VR-режиме физика обновляется отдельно
+            const delta = Math.min(clock.getDelta(), 0.05);
+            if (!paused) {
+                // Движение
+                let moveX = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
+                let moveZ = (keys.w ? 1 : 0) - (keys.s ? 1 : 0);
+                const forward = new THREE.Vector3(0, 0, -1);
+                // В VR камера управляется шлемом, но движение рассчитываем от её поворота
+                if (renderer.xr.getSession()) {
+                    const refSpace = renderer.xr.getReferenceSpace();
+                    if (refSpace) {
+                        // Используем поворот камеры от WebXR
+                    }
+                }
+                forward.applyQuaternion(camera.quaternion);
+                forward.y = 0;
+                forward.normalize();
+                const right = new THREE.Vector3(1, 0, 0);
+                right.applyQuaternion(camera.quaternion);
+                right.y = 0;
+                right.normalize();
+                const moveVec = new THREE.Vector3(0, 0, 0);
+                moveVec.addScaledVector(forward, moveZ);
+                moveVec.addScaledVector(right, moveX);
+                if (moveVec.length() > 1) moveVec.normalize();
+                moveVec.multiplyScalar(MOVE_SPEED);
+                playerPhysics.velocity.x = moveVec.x;
+                playerPhysics.velocity.z = moveVec.z;
+                if (keys.space && playerPhysics.onGround) {
+                    playerPhysics.velocity.y = JUMP_SPEED;
+                    playerPhysics.onGround = false;
+                }
+                playerPhysics.velocity.y += GRAVITY * delta;
+                const newPos = playerGroup.position.clone();
+                newPos.x += playerPhysics.velocity.x * delta;
+                newPos.y += playerPhysics.velocity.y * delta;
+                newPos.z += playerPhysics.velocity.z * delta;
+                if (newPos.y < -5) {
+                    newPos.set(0, 2, 0);
+                    playerPhysics.velocity.set(0, 0, 0);
+                }
+                if (newPos.y < 0) { newPos.y = 0; playerPhysics.velocity.y = 0; playerPhysics.onGround = true; }
+                playerGroup.position.copy(newPos);
+                // В VR камера следует за позицией игрока, но поворот от шлема
+                camera.position.copy(playerGroup.position);
+                camera.position.y += PLAYER_HEIGHT;
+
+                // Проверка цели
+                const goalPos = new THREE.Vector3(5, 0.2, 4.5);
+                if (playerGroup.position.distanceTo(goalPos) < 1.5 && !levelCompleteShown) {
+                    levelCompleteShown = true;
+                    document.getElementById('levelComplete').classList.add('show');
+                    document.getElementById('nextLevelBtn').onclick = () => {
+                        levelCompleteShown = false;
+                        document.getElementById('levelComplete').classList.remove('show');
+                        buildLevel();
+                        document.getElementById('levelNum').textContent = '1';
+                        localStorage.setItem('portal3_save', JSON.stringify({ level: 0 }));
+                    };
+                }
+
+                if (Math.floor(Date.now() / 5000) % 2 === 0) {
+                    localStorage.setItem('portal3_save', JSON.stringify({ level: 0 }));
+                }
+            }
+
+            // Рендеринг через WebXR (стерео-картинка)
+            renderer.render(scene, camera);
+
+            if (isVRActive) {
+                requestAnimationFrame(animateVR);
+            }
+        }
+
+        // ============================================================
+        //  ЗАПУСК
+        // ============================================================
+        // Проверяем поддержку VR
+        if (navigator.xr) {
+            navigator.xr.isSessionSupported('immersive-vr').then(supported => {
+                btnVR.style.display = supported ? 'block' : 'none';
+            }).catch(() => { btnVR.style.display = 'none'; });
+        } else {
+            btnVR.style.display = 'none';
+        }
+
+        // Включаем гироскоп только если он нужен
+        enableGyro();
+
+        console.log('Portal 3 — VR-режим работает. Нажмите "VR" для входа.');
+    </script>
+</body>
+  </html>
